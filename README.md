@@ -2,7 +2,7 @@
 
 Training-free deepfake image verification via VQA-style probing with LVLMs + LLM reasoning.
 
-**Paper:** Accepted to ICML 2025 — [paper](https://icml.cc/virtual/2025/51033)
+[[Paper accepted to ICML 2025]](https://icml.cc/virtual/2025/51033)
 
 ---
 
