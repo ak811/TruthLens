@@ -18,33 +18,6 @@ The goal is **instance-level, explainable data verification** without detector f
 
 ---
 
-## Repository layout
-
-```
-truthlens/
-  concatinate_jsons.py
-  evaluation_gpt.py
-  inference_image_chatunivi.py
-  requirements.txt
-  CNNDetection-master/         # baseline
-  DIRE-main/                   # baseline
-```
-
-### Key scripts
-
-- `inference_image_chatunivi.py`  
-  Runs Chat-UniVi on a dataset folder and writes per-image text answers to JSON.
-
-- `concatinate_jsons.py`  
-  Concatenates multiple per-prompt JSON outputs into `combined_descriptions.json`.
-
-- `evaluation_gpt.py`  
-  Uses the OpenAI API to turn the combined descriptions into:
-  - `{"verdict": "FAKE"|"REAL", "justification": "..."}` per image
-  - `analysis_metrics.json` (basic metrics; see note below)
-
----
-
 ## Installation
 
 ### 1) Create an environment and install repo dependencies
