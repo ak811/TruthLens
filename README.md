@@ -1,93 +1,197 @@
-# FinalProject
+# TruthLens
 
+Training-free deepfake image verification via VQA-style probing with LVLMs + LLM reasoning.
 
+**Paper:** Accepted to ICML 2025 — [paper](https://icml.cc/virtual/2025/51033)
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Overview
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+TruthLens reframes fake image detection as a **Visual Question Answering (VQA)** problem. Instead of an opaque binary classifier, it:
 
-## Add your files
+1. **Probes** an input image with a set of artifact-focused prompts using a **Large Vision-Language Model (LVLM)** (e.g., Chat-UniVi).
+2. **Aggregates** the LVLM’s natural-language answers into a structured evidence summary.
+3. **Reasons** over that evidence with an **LLM** to output a final **verdict** (`REAL`/`FAKE`) and a concise **justification**.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+The goal is **instance-level, explainable data verification** without detector fine-tuning.
+
+---
+
+## Repository layout
 
 ```
-cd existing_repo
-git remote add origin https://cci-git.charlotte.edu/group-2/finalproject.git
-git branch -M main
-git push -uf origin main
+truthlens/
+  concatinate_jsons.py
+  evaluation_gpt.py
+  inference_image_chatunivi.py
+  requirements.txt
+  CNNDetection-master/         # baseline
+  DIRE-main/                   # baseline
 ```
 
-## Integrate with your tools
+### Key scripts
 
-- [ ] [Set up project integrations](https://cci-git.charlotte.edu/group-2/finalproject/-/settings/integrations)
+- `inference_image_chatunivi.py`  
+  Runs Chat-UniVi on a dataset folder and writes per-image text answers to JSON.
 
-## Collaborate with your team
+- `concatinate_jsons.py`  
+  Concatenates multiple per-prompt JSON outputs into `combined_descriptions.json`.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+- `evaluation_gpt.py`  
+  Uses the OpenAI API to turn the combined descriptions into:
+  - `{"verdict": "FAKE"|"REAL", "justification": "..."}` per image
+  - `analysis_metrics.json` (basic metrics; see note below)
 
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### 1) Create an environment and install repo dependencies
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```bash
+conda create -n truthlens python=3.10 -y
+conda activate truthlens
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+This installs:
+- torch==2.5.1
+- tqdm==4.67.1
+- Pillow==10.0.1
+- openai==0.28.0 (legacy client used by `evaluation_gpt.py`)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### 2) Install Chat-UniVi (required for LVLM probing)
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+`inference_image_chatunivi.py` imports `ChatUniVi.*`, so you must install Chat-UniVi in the same environment.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+One common approach:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```bash
+git clone https://github.com/PKU-YuanGroup/Chat-UniVi
+cd Chat-UniVi
+pip install -e .
+cd ..
+```
+
+Validate:
+
+```bash
+python -c "import ChatUniVi; print('ChatUniVi import OK')"
+```
+
+> Note: Chat-UniVi may have extra CUDA / system requirements depending on your setup.
+
+---
+
+## Data format expected by the probing script
+
+`inference_image_chatunivi.py` expects a dataset directory with two subfolders:
+
+```
+<dataset_path>/
+  fake1000/
+    *.png|*.jpg|*.jpeg|*.bmp|*.tiff
+  first1000/
+    *.png|*.jpg|*.jpeg|*.bmp|*.tiff
+```
+
+It will write JSON output files into each subfolder and a combined JSON at the dataset root.
+
+---
+
+## Running TruthLens (probe → aggregate → verdict)
+
+### Step 1: LVLM probing (Chat-UniVi)
+
+Open `inference_image_chatunivi.py` and set:
+
+- `dataset_path = "your path"`
+- GPU selection: the script currently hardcodes  
+  `os.environ["CUDA_VISIBLE_DEVICES"] = "1"`  
+  Change `"1"` to the GPU you want (or remove the line).
+
+Run:
+
+```bash
+python inference_image_chatunivi.py
+```
+
+This script currently runs **one** prompt:
+> “Taking into account the lighting, texture, symmetry, and other features...”
+
+To run the full TruthLens probe set, repeat the probing pass with different `query` strings (see **Prompt set** below) and save each pass to a separate JSON.
+
+### Step 2: Aggregate multiple probe outputs
+
+Edit `concatinate_jsons.py` to point `json_paths` at the JSON files produced by your different prompt runs, then:
+
+```bash
+python concatinate_jsons.py
+```
+
+Output:
+- `combined_descriptions.json`
+
+### Step 3: LLM verdict + explanation (OpenAI API)
+
+Run:
+
+```bash
+python evaluation_gpt.py   --description_file combined_descriptions.json   --output_dir outputs/   --api_key YOUR_OPENAI_KEY
+```
+
+Outputs:
+- `outputs/<image_name>_analysis.json` for each image
+- `outputs/analysis_metrics.json`
+
+**Metrics note:** `evaluation_gpt.py` currently computes accuracy as `fake_count / total_images`, which only makes sense if your description file contains *only fake images*. If you mix real and fake images together, you should update the metrics logic to use labels.
+
+---
+
+## Prompt set (TruthLens probes)
+
+Recommended categories (adapt these into separate probe runs):
+
+- Lighting and Shadows  
+- Texture and Skin Details  
+- Symmetry and Proportions  
+- Reflections and Highlights  
+- Facial Features and Expression  
+- Facial Hair (if applicable)  
+- Eyes and Pupils  
+- Background and Depth Perception  
+- Overall Realism
+
+Tip: save **one JSON per prompt category** so aggregation is clean and debuggable.
+
+---
+
+## Baselines included
+
+### CNNDetection (`CNNDetection-master/`)
+
+CNN-based binary classifier baseline. Includes its own scripts, dataset download helpers, and weights.
+Follow `CNNDetection-master/README.md`.
+
+### DIRE (`DIRE-main/`)
+
+Diffusion Reconstruction Error baseline. Includes guided diffusion utilities and its own scripts.
+Follow `DIRE-main/README.md`.
+
+---
+
+## Citation
+
+If you use TruthLens, cite the paper:
+
+- **ICML 2025 page:** [paper](https://icml.cc/virtual/2025/51033)
+
+(You can add a BibTeX entry here once you decide the canonical citation format you want in the repo.)
+
+---
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This repository includes third-party code under `CNNDetection-master/` and `DIRE-main/`. See those subfolders for their respective licenses and terms.
