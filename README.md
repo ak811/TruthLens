@@ -155,5 +155,3 @@ Follow `DIRE-main/README.md`.
 If you use TruthLens, cite the paper:
 
 - **ICML 2025 page:** [paper](https://icml.cc/virtual/2025/51033)
-
-(You can add a BibTeX entry here once you decide the canonical citation format you want in the repo.)
