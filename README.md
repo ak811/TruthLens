@@ -54,8 +54,6 @@ Validate:
 python -c "import ChatUniVi; print('ChatUniVi import OK')"
 ```
 
-> Note: Chat-UniVi may have extra CUDA / system requirements depending on your setup.
-
 ---
 
 ## Data format expected by the probing script
@@ -90,9 +88,6 @@ Run:
 ```bash
 python inference_image_chatunivi.py
 ```
-
-This script currently runs **one** prompt:
-> “Taking into account the lighting, texture, symmetry, and other features...”
 
 To run the full TruthLens probe set, repeat the probing pass with different `query` strings (see **Prompt set** below) and save each pass to a separate JSON.
 
