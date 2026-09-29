@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "TruthLens: Training-Free Data Verification for Deepfake Images via VQA-style Probing"
+type: software
+version: 1.1.0
+authors:
+  - family-names: Chakraborty
+    given-names: Ritabrata
+    affiliation: "Manipal University Jaipur"
+  - family-names: Chakraborty
+    given-names: Rajatsubhra
+    affiliation: "University of North Carolina at Charlotte"
+  - family-names: Khaleghi Rahimian
+    given-names: Ali
+    affiliation: "University of North Carolina at Charlotte"
+url: "https://icml.cc/virtual/2025/51033"
+# TODO: add repository-code, license and an arXiv/DOI identifier.
+preferred-citation:
+  type: conference-paper
+  title: "TruthLens: Training-Free Data Verification for Deepfake Images via VQA-style Probing"
+  authors:
+    - family-names: Chakraborty
+      given-names: Ritabrata
+    - family-names: Chakraborty
+      given-names: Rajatsubhra
+    - family-names: Khaleghi Rahimian
+      given-names: Ali
+  collection-title: "Data in Generative Models Workshop: The Bad, the Ugly, and the Greats (DIG-BUGS) at ICML 2025"
+  conference:
+    name: "DIG-BUGS Workshop at ICML 2025"
+    city: Vancouver
+    country: CA
+  year: 2025
+  url: "https://icml.cc/virtual/2025/51033"
