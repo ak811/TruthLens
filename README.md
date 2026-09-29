@@ -4,7 +4,7 @@ Ritabrata Chakraborty, Rajatsubhra Chakraborty, Ali Khaleghi Rahimian
 
 *Data in Generative Models Workshop (DIG-BUGS) at ICML 2025, Vancouver, Canada*
 
-[Paper (ICML 2025 virtual page)](https://icml.cc/virtual/2025/51033) · [Poster](docs/figures/poster.png)
+[Paper (ICML 2025 virtual page)](https://icml.cc/virtual/2025/51033) · [Poster](docs/figures/poster.png) · [arXiv](https://arxiv.org/pdf/2503.15342)
 
 TruthLens casts deepfake image detection as visual question answering (VQA). A large
 vision-language model (LVLM) answers a fixed set of artifact-oriented questions about an
