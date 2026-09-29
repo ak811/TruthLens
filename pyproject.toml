@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "truthlens"
+version = "1.1.0"
+description = "TruthLens: training-free deepfake image verification via VQA-style probing with LVLMs and LLM reasoning"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name = "Ritabrata Chakraborty" },
+  { name = "Rajatsubhra Chakraborty" },
+  { name = "Ali Khaleghi Rahimian" },
+]
+# Core dependencies are light so that aggregation, judging and evaluation can
+# run on a CPU machine separate from the GPU machine used for LVLM probing.
+dependencies = [
+  "numpy>=1.21",
+  "Pillow>=9.0",
+  "PyYAML>=6.0",
+  "tqdm>=4.60",
+]
+
+[project.optional-dependencies]
+judge = ["openai>=1.0,<3"]
+hf = ["torch>=2.0", "transformers>=4.40", "accelerate>=0.25"]
+dev = ["pytest>=7.0", "openai>=1.0,<3", "scikit-learn>=1.0"]
+
+[project.scripts]
+truthlens = "truthlens.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["truthlens*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
