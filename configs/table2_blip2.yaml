@@ -1,0 +1,19 @@
+# Table 2 row: blip2 (Prompts + LLM, and Yes/No via `truthlens yesno`).
+# The checkpoint used in the paper is not reported; 'Salesforce/blip2-opt-2.7b' is an ASSUMPTION.
+run_name: blip2_gpt4
+output_dir: outputs/blip2_gpt4
+seed: 0
+data:
+  manifest: data/manifest.jsonl
+probe:
+  backend: blip2
+  model_path: Salesforce/blip2-opt-2.7b
+  device: cuda
+  categories: all
+aggregate:
+  mode: structured
+  categories: all
+judge:
+  backend: openai
+  model: gpt-4
+  prompt: truthlens_v1

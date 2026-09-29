@@ -1,0 +1,19 @@
+# Table 2 row: llava15 (Prompts + LLM, and Yes/No via `truthlens yesno`).
+# The checkpoint used in the paper is not reported; 'llava-hf/llava-1.5-7b-hf' is an ASSUMPTION.
+run_name: llava15_gpt4
+output_dir: outputs/llava15_gpt4
+seed: 0
+data:
+  manifest: data/manifest.jsonl
+probe:
+  backend: llava15
+  model_path: llava-hf/llava-1.5-7b-hf
+  device: cuda
+  categories: all
+aggregate:
+  mode: structured
+  categories: all
+judge:
+  backend: openai
+  model: gpt-4
+  prompt: truthlens_v1
