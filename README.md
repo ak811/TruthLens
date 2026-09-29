@@ -251,10 +251,7 @@ identifier returned by the API.
 
 ## License and acknowledgements
 
-*TODO: add a LICENSE file for the TruthLens code.* No licence was included in the
-original release. Vendored code keeps its own licence: CNNDetection is CC BY-NC-SA 4.0,
-and guided-diffusion is MIT. The DIRE repository ships no licence file; see
-[`baselines/README.md`](baselines/README.md).
+The TruthLens code is licensed under the terms in [LICENSE](LICENSE).
 
 TruthLens builds on [Chat-UniVi](https://github.com/PKU-YuanGroup/Chat-UniVi),
 [CNNDetection](https://github.com/PeterWang512/CNNDetection),
