@@ -22,7 +22,7 @@ def dataset_folder(root: str, cfg: CONFIGCLASS):
     if cfg.mode == "binary":
         return binary_dataset(root, cfg)
     if cfg.mode == "filename":
-        return FileNameDataset(root, cfg)
+        return FileNameDataset(cfg, root)
     raise ValueError("cfg.mode needs to be binary or filename.")
 
 

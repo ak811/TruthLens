@@ -41,6 +41,13 @@ def reshape_image(imgs: torch.Tensor, image_size: int) -> torch.Tensor:
 
 def main():
     args = create_argparser().parse_args()
+    # [TruthLens] Guard against two silent failure modes of the upstream script:
+    # the default num_samples=-1 makes the main loop a no-op, and setup_dist()
+    # raises an opaque KeyError when CUDA_VISIBLE_DEVICES is unset.
+    if args.num_samples <= 0:
+        raise ValueError("--num_samples must be a positive integer (number of images to process).")
+    if "CUDA_VISIBLE_DEVICES" not in os.environ:
+        raise EnvironmentError("Set CUDA_VISIBLE_DEVICES (e.g. export CUDA_VISIBLE_DEVICES=0) before running compute_dire.py.")
 
     dist_util.setup_dist(os.environ["CUDA_VISIBLE_DEVICES"])
     logger.configure(dir=args.recons_dir)

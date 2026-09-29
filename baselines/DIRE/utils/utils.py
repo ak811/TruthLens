@@ -17,7 +17,7 @@ def str2bool(v: str, strict=True) -> bool:
     if isinstance(v, bool):
         return v
     elif isinstance(v, str):
-        if v.lower() in ("true", "yes", "on" "t", "y", "1"):
+        if v.lower() in ("true", "yes", "on", "t", "y", "1"):
             return True
         elif v.lower() in ("false", "no", "off", "f", "n", "0"):
             return False
