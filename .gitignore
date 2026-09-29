@@ -1,55 +1,31 @@
-# =========================
-# Python junk
-# =========================
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-
-# Distribution / packaging
+*.egg-info/
 build/
 dist/
-develop-eggs/
-eggs/
-*.egg-info/
-.installed.cfg
-pip-wheel-metadata/
-
-# Unit test / coverage reports
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.nox/
 .pytest_cache/
-pytestdebug.log
+.mypy_cache/
+.ruff_cache/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Environments and secrets
+.venv/
+venv/
+env/
+.env
+*.key
 
-# IDEs & editors
-.vscode/
-.idea/
-*.swp
-*.swo
+# Data, outputs and model weights (see docs/DATA.md)
+/data/
+/outputs/
+baselines/DIRE/data/
+baselines/CNNDetection/dataset/**/*.zip
+baselines/CNNDetection/dataset/**/*.7z*
+baselines/CNNDetection/results/
+*.pt
+checkpoints/
 
-# OS junk
+# OS / editors
 .DS_Store
-Thumbs.db
-
-# =========================
-# Project-specific ignores
-# =========================
-
-# DIRE project
-/DIRE-main/data/
-/DIRE-main/examples/
-
-# CNNDetection project
-/CNNDetection-master/examples/
+.idea/
+.vscode/
