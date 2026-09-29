@@ -12,7 +12,7 @@ image. The answers are aggregated into a textual summary, and a large language m
 reasons over that summary to produce a verdict (REAL/FAKE) and a natural-language
 justification. The method involves no training or fine-tuning.
 
-![Placeholder for Figure 1: the TruthLens pipeline, from input image and probe prompts through the LVLM, answer aggregation and LLM to verdict and justification](docs/figures/fig1_pipeline_overview.png)
+![Placeholder for Figure 1: the TruthLens pipeline, from input image and probe prompts through the LVLM, answer aggregation and LLM to verdict and justification](docs/figures/fig1_pipeline_overview_1.png)
 
 *Figure 1. Overview of the TruthLens pipeline. (Placeholder: replace with Figure 1 of the paper.)*
 
@@ -122,7 +122,7 @@ truthlens manifest --real data/ffhq_first1000 \
                    --out data/manifest.jsonl
 ```
 
-![Placeholder for Figure 2: example real FFHQ images next to ProGAN and LDM generated images](docs/figures/fig2_dataset_overview.png)
+![Placeholder for Figure 2: example real FFHQ images next to ProGAN and LDM generated images](docs/figures/fig2_dataset_overview_1.png)
 
 *Figure 2. Evaluation data: real FFHQ images (left); ProGAN (ForgeryNet) and LDM images (right). (Placeholder: replace with Figure 2 of the paper.)*
 
@@ -162,7 +162,7 @@ command resumes the run and retries items that failed.
 truthlens yesno --config configs/truthlens_chatunivi.yaml
 ```
 
-![Placeholder for Figure 3: LVLM yes/no answers for deepfake and real faces](docs/figures/fig3_yes_no_probing.png)
+![Placeholder for Figure 3: LVLM yes/no answers for deepfake and real faces](docs/figures/fig3_yes_no_probing_1.png)
 
 *Figure 3. Yes/No prompting baseline. (Placeholder: replace with Figure 3 of the paper.)*
 
@@ -198,7 +198,7 @@ model settings). `truthlens evaluate` prints a table per fake subset (evaluated 
 all real images) and for the pooled set. The table includes per-class accuracy, balanced
 accuracy, hard-label AUC, precision, recall, F1 and the number of invalid predictions.
 
-![Placeholder for Figure 4: per-probe LVLM answers and final verdicts with justifications for four face images](docs/figures/fig4_qualitative_examples.png)
+![Placeholder for Figure 4: per-probe LVLM answers and final verdicts with justifications for four face images](docs/figures/fig4_qualitative_examples_1.png)
 
 *Figure 4. Per-probe answers and final verdicts; these correspond to the `probes.jsonl` and `verdicts.jsonl` records. (Placeholder: replace with Figure 4 of the paper.)*
 
