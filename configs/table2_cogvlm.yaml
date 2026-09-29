@@ -1,0 +1,19 @@
+# Table 2 row: cogvlm (Prompts + LLM, and Yes/No via `truthlens yesno`).
+# The checkpoint used in the paper is not reported; 'THUDM/cogvlm-chat-hf' is an ASSUMPTION.
+run_name: cogvlm_gpt4
+output_dir: outputs/cogvlm_gpt4
+seed: 0
+data:
+  manifest: data/manifest.jsonl
+probe:
+  backend: cogvlm
+  model_path: THUDM/cogvlm-chat-hf
+  device: cuda
+  categories: all
+aggregate:
+  mode: structured
+  categories: all
+judge:
+  backend: openai
+  model: gpt-4
+  prompt: truthlens_v1

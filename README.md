@@ -1,157 +1,262 @@
-# TruthLens
+# TruthLens: Training-Free Data Verification for Deepfake Images via VQA-style Probing
 
-Training-free deepfake image verification via VQA-style probing with LVLMs + LLM reasoning.
+Ritabrata Chakraborty, Rajatsubhra Chakraborty, Ali Khaleghi Rahimian
 
-[[Paper accepted to ICML 2025]](https://icml.cc/virtual/2025/51033)
+*Data in Generative Models Workshop (DIG-BUGS) at ICML 2025, Vancouver, Canada*
+
+[Paper (ICML 2025 virtual page)](https://icml.cc/virtual/2025/51033) · [Poster](docs/figures/poster.png) · arXiv: *TODO: add link*
+
+TruthLens casts deepfake image detection as visual question answering (VQA). A large
+vision-language model (LVLM) answers a fixed set of artifact-oriented questions about an
+image. The answers are aggregated into a textual summary, and a large language model (LLM)
+reasons over that summary to produce a verdict (REAL/FAKE) and a natural-language
+justification. The method involves no training or fine-tuning.
+
+![Placeholder for Figure 1: the TruthLens pipeline, from input image and probe prompts through the LVLM, answer aggregation and LLM to verdict and justification](docs/figures/fig1_pipeline_overview.png)
+
+*Figure 1. Overview of the TruthLens pipeline. (Placeholder: replace with Figure 1 of the paper.)*
 
 ---
 
-## Overview
+## Contents
 
-TruthLens reframes fake image detection as a **Visual Question Answering (VQA)** problem. Instead of an opaque binary classifier, it:
+- [Method](#method)
+- [Repository structure](#repository-structure)
+- [Installation](#installation)
+- [Data preparation](#data-preparation)
+- [Usage](#usage)
+- [Configuration and outputs](#configuration-and-outputs)
+- [Reproducing the paper](#reproducing-the-paper)
+- [Testing](#testing)
+- [Limitations](#limitations)
+- [Citation](#citation)
+- [License and acknowledgements](#license-and-acknowledgements)
 
-1. **Probes** an input image with a set of artifact-focused prompts using a **Large Vision-Language Model (LVLM)** (e.g., Chat-UniVi).
-2. **Aggregates** the LVLM’s natural-language answers into a structured evidence summary.
-3. **Reasons** over that evidence with an **LLM** to output a final **verdict** (`REAL`/`FAKE`) and a concise **justification**.
+## Method
 
-The goal is **instance-level, explainable data verification** without detector fine-tuning.
+Given an image *I*, TruthLens proceeds in four steps (paper §2):
 
----
+1. **Question generation.** A fixed prompt set *P* = {*p*₁, …, *p*₉} probes nine artifact
+   categories: lighting and shadows, texture and skin details, symmetry and proportions,
+   reflections and highlights, facial features and expression, facial hair, eyes and
+   pupils, background and depth perception, and overall realism of the face. The prompts
+   are reproduced verbatim from Appendix B in
+   [`truthlens/prompts.py`](truthlens/prompts.py); `truthlens prompts` prints them.
+2. **Multimodal reasoning.** An LVLM *f*_MM answers each prompt: *a*ᵢ = *f*_MM(*I*, *p*ᵢ).
+   The main model is Chat-UniVi; BLIP-2, LLaVA-1.5 and CogVLM are also supported
+   (Table 2).
+3. **Textual aggregation.** The answers are combined into a summary *S* = *g*(*A*). By
+   default, *g* produces one labelled block per category.
+4. **Final decision.** An LLM *f*_LM maps *S* to a verdict *y* ∈ {REAL, FAKE} and a
+   justification *r*.
+
+## Repository structure
+
+```
+TruthLens/
+├── truthlens/                  # TruthLens implementation (installable package, CLI: `truthlens`)
+│   ├── prompts.py              #   probe set P (App. B), category presets, Yes/No prompt
+│   ├── lvlm/                   #   f_MM backends: chatunivi, blip2, llava15, cogvlm, mock
+│   ├── aggregate.py            #   g(A) -> S (structured | pipe)
+│   ├── judge.py                #   f_LM: prompts, OpenAI backend, robust verdict parsing
+│   ├── metrics.py              #   per-class accuracy, P/R/F1, AUC (NumPy only)
+│   ├── data.py                 #   dataset manifests
+│   ├── pipeline.py             #   resumable stages: probe, aggregate, judge, evaluate, yesno
+│   ├── config.py               #   YAML config, defaults, --set overrides
+│   └── cli.py
+├── configs/                    # experiment configurations (see "Reproducing the paper")
+├── scripts/                    # smoke test, paper/ablation drivers, baseline folder builder
+├── baselines/                  # vendored CNNDetection and DIRE (+ TruthLens evaluation scripts)
+├── tests/                      # pytest suite
+questions
+│   ├── REPRODUCIBILITY.md      # environments, experiment map, seeds, known differences
+│   ├── DATA.md                 # datasets, manifests, importing released outputs
+│   └── figures/                # figure placeholders and the poster
+├── pyproject.toml, requirements*.txt
+├── CITATION.cff
+└── README.md
+```
 
 ## Installation
 
-### 1) Create an environment and install repo dependencies
+The core package (aggregation, judge, evaluation) needs Python ≥ 3.9 and no GPU:
 
 ```bash
-conda create -n truthlens python=3.10 -y
-conda activate truthlens
-pip install --upgrade pip
-pip install -r requirements.txt
+git clone <this repository> TruthLens && cd TruthLens
+pip install -e ".[judge]"          # add ",dev" for the test suite
 ```
 
-This installs:
-- torch==2.5.1
-- tqdm==4.67.1
-- Pillow==10.0.1
-- openai==0.28.0 (legacy client used by `evaluation_gpt.py`)
+LVLM probing requires a CUDA GPU and the LVLM's own software stack:
 
-### 2) Install Chat-UniVi (required for LVLM probing)
+* **Chat-UniVi** (main model). Install it by following its instructions, which pin their
+  own torch/transformers, and then install TruthLens into the same environment:
 
-`inference_image_chatunivi.py` imports `ChatUniVi.*`, so you must install Chat-UniVi in the same environment.
+  ```bash
+  git clone https://github.com/PKU-YuanGroup/Chat-UniVi
+  pip install -e Chat-UniVi
+  pip install -e /path/to/TruthLens
+  python -c "import ChatUniVi; print('ChatUniVi import OK')"
+  ```
 
-One common approach:
+* **BLIP-2 / LLaVA-1.5** via Hugging Face: `pip install -e ".[hf,judge]"`. CogVLM
+  requires the `transformers` version given in its model card.
+
+The judge reads the API key from the environment only:
 
 ```bash
-git clone https://github.com/PKU-YuanGroup/Chat-UniVi
-cd Chat-UniVi
-pip install -e .
-cd ..
+export OPENAI_API_KEY=...            # optionally OPENAI_BASE_URL for OpenAI-compatible servers
 ```
 
-Validate:
+The baselines use separate environments; see [`baselines/README.md`](baselines/README.md).
+Environment details are in [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md).
+
+## Data preparation
+
+The paper evaluates on 1,000 real FFHQ faces, 1,000 LDM-generated faces and 1,000 ProGAN
+images from ForgeryNet. No images are included in this repository. Arrange each subset as
+a folder of images and build a manifest:
 
 ```bash
-python -c "import ChatUniVi; print('ChatUniVi import OK')"
+truthlens manifest --real data/ffhq_first1000 \
+                   --fake ldm=data/ldm_fake1000 --fake progan=data/progan_fake1000 \
+                   --out data/manifest.jsonl
 ```
 
----
+![Placeholder for Figure 2: example real FFHQ images next to ProGAN and LDM generated images](docs/figures/fig2_dataset_overview.png)
 
-## Data format expected by the probing script
+*Figure 2. Evaluation data: real FFHQ images (left); ProGAN (ForgeryNet) and LDM images (right). (Placeholder: replace with Figure 2 of the paper.)*
 
-`inference_image_chatunivi.py` expects a dataset directory with two subfolders:
+See [`docs/DATA.md`](docs/DATA.md) for data sources, what is not recorded about them, and
+how to import per-category JSON files produced by the originally released scripts.
 
-```
-<dataset_path>/
-  fake1000/
-    *.png|*.jpg|*.jpeg|*.bmp|*.tiff
-  first1000/
-    *.png|*.jpg|*.jpeg|*.bmp|*.tiff
-```
+## Usage
 
-It will write JSON output files into each subfolder and a combined JSON at the dataset root.
-
----
-
-## Running TruthLens (probe → aggregate → verdict)
-
-### Step 1: LVLM probing (Chat-UniVi)
-
-Open `inference_image_chatunivi.py` and set:
-
-- `dataset_path = "your path"`
-- GPU selection: the script currently hardcodes  
-  `os.environ["CUDA_VISIBLE_DEVICES"] = "1"`  
-  Change `"1"` to the GPU you want (or remove the line).
-
-Run:
+**Smoke test** (CPU only, mock LVLM and mock judge, about one second):
 
 ```bash
-python inference_image_chatunivi.py
+bash scripts/smoke_test.sh           # ends with "SMOKE TEST PASSED"
 ```
 
-To run the full TruthLens probe set, repeat the probing pass with different `query` strings (see **Prompt set** below) and save each pass to a separate JSON.
-
-### Step 2: Aggregate multiple probe outputs
-
-Edit `concatinate_jsons.py` to point `json_paths` at the JSON files produced by your different prompt runs, then:
+**Full pipeline** (probe → aggregate → judge → evaluate):
 
 ```bash
-python concatinate_jsons.py
+truthlens run --config configs/truthlens_chatunivi.yaml
 ```
 
-Output:
-- `combined_descriptions.json`
-
-### Step 3: LLM verdict + explanation (OpenAI API)
-
-Run:
+**Individual stages.** Each stage reads and writes files in `output_dir`, so probing can
+run on a GPU machine and the remaining stages elsewhere:
 
 ```bash
-python evaluation_gpt.py   --description_file combined_descriptions.json   --output_dir outputs/   --api_key YOUR_OPENAI_KEY
+truthlens probe     --config configs/truthlens_chatunivi.yaml
+truthlens aggregate --config configs/truthlens_chatunivi.yaml
+truthlens judge     --config configs/truthlens_chatunivi.yaml
+truthlens evaluate  --config configs/truthlens_chatunivi.yaml
 ```
 
-Outputs:
-- `outputs/<image_name>_analysis.json` for each image
-- `outputs/analysis_metrics.json`
+`probe` and `judge` append each result as soon as it is produced. Re-running the same
+command resumes the run and retries items that failed.
 
-**Metrics note:** `evaluation_gpt.py` currently computes accuracy as `fake_count / total_images`, which only makes sense if your description file contains *only fake images*. If you mix real and fake images together, you should update the metrics logic to use labels.
+**Yes/No baseline** (Table 2: the LVLM is asked directly, with no probes and no LLM):
 
----
+```bash
+truthlens yesno --config configs/truthlens_chatunivi.yaml
+```
 
-## Prompt set (TruthLens probes)
+![Placeholder for Figure 3: LVLM yes/no answers for deepfake and real faces](docs/figures/fig3_yes_no_probing.png)
 
-Recommended categories (adapt these into separate probe runs):
+*Figure 3. Yes/No prompting baseline. (Placeholder: replace with Figure 3 of the paper.)*
 
-- Lighting and Shadows  
-- Texture and Skin Details  
-- Symmetry and Proportions  
-- Reflections and Highlights  
-- Facial Features and Expression  
-- Facial Hair (if applicable)  
-- Eyes and Pupils  
-- Background and Depth Perception  
-- Overall Realism
+**Per-category ablation** (Table 4), reusing the probe answers of a finished run:
 
-Tip: save **one JSON per prompt category** so aggregation is clean and debuggable.
+```bash
+bash scripts/run_ablation_table4.sh configs/truthlens_chatunivi.yaml outputs/chatunivi_gpt4
+```
 
----
+**Useful options.** `--limit N` restricts each subset to N images, which helps when
+debugging. `--set key=value` overrides any configuration value, for example
+`--set judge.model=gpt-4-0613 --set judge.temperature=0`. `truthlens <command> -h` lists
+all options.
 
-## Baselines included
+## Configuration and outputs
 
-### CNNDetection (`CNNDetection-master/`)
+Configurations are YAML files; unknown keys are rejected. The main options are:
 
-CNN-based binary classifier baseline. Includes its own scripts, dataset download helpers, and weights.
-Follow `CNNDetection-master/README.md`.
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `probe.backend` | `chatunivi` | `chatunivi`, `blip2`, `llava15`, `cogvlm`, `mock` |
+| `probe.categories` | `all` | `all` (9 probes), `released_7`, or a list of category keys |
+| `probe.generation` | sampling, T = 0.2, 1024 tokens | LVLM decoding (released-script values; not reported in the paper) |
+| `aggregate.mode` | `structured` | `structured` (labelled blocks) or `pipe` (released `" \| "` concatenation) |
+| `judge.model` | `gpt-4` | judge LLM (paper: GPT-4; released code: `gpt-3.5-turbo`) |
+| `judge.prompt` | `truthlens_v1` | released system prompt; `truthlens_v1_confidence` also requests a confidence level |
+| `evaluate.invalid_policy` | `incorrect` | how failed or unparseable predictions are scored (`incorrect` or `exclude`) |
+| `seed` | `0` | base seed; each (image, prompt) pair receives a derived seed |
 
-### DIRE (`DIRE-main/`)
+Each run directory contains `probes.jsonl`, `summaries.jsonl`, `verdicts.jsonl`,
+`metrics.json`, `config.resolved.yaml` and `run_info.json` (package versions, git commit,
+model settings). `truthlens evaluate` prints a table per fake subset (evaluated against
+all real images) and for the pooled set. The table includes per-class accuracy, balanced
+accuracy, hard-label AUC, precision, recall, F1 and the number of invalid predictions.
 
-Diffusion Reconstruction Error baseline. Includes guided diffusion utilities and its own scripts.
-Follow `DIRE-main/README.md`.
+![Placeholder for Figure 4: per-probe LVLM answers and final verdicts with justifications for four face images](docs/figures/fig4_qualitative_examples.png)
 
----
+*Figure 4. Per-probe answers and final verdicts; these correspond to the `probes.jsonl` and `verdicts.jsonl` records. (Placeholder: replace with Figure 4 of the paper.)*
+
+## Reproducing the paper
+
+[`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) maps every table to a command and a
+metric key. In short:
+
+| Result | Configuration / command |
+|--------|-------------------------|
+| Table 2 (ChatUniVi rows), TruthLens rows of Tables 1 and 3 | `configs/truthlens_chatunivi.yaml` with `truthlens run` and `truthlens yesno` |
+| Table 2 (BLIP-2, LLaVA-1.5, CogVLM rows) | `configs/table2_{blip2,llava15,cogvlm}.yaml` |
+| Table 4 | `scripts/run_ablation_table4.sh` |
+| CNNDetection and DIRE rows | [`baselines/README.md`](baselines/README.md) |
+| Pipeline exactly as originally released | `configs/released_pipeline.yaml` |
+
+## Testing
+
+```bash
+pip install -e ".[dev]"
+pytest -q
+bash scripts/smoke_test.sh
+```
+
+The suite covers prompts, aggregation (including byte-exact equivalence with the released
+concatenation), verdict parsing, metrics (checked against scikit-learn), manifests,
+configuration, resumption and failure handling, legacy import, and the OpenAI client code
+path against a local mock server. End-to-end tests of the baselines run only when PyTorch
+is installed.
+
+## Limitations
+
+As discussed in the paper, the evaluation covers two face-centric datasets. Scene-level
+images and video are not evaluated. Each image requires nine LVLM queries and one LLM
+call, which adds latency and API cost. The LLM judge is a hosted model whose behaviour may
+change over time. For this reason, `run_info.json` and each verdict record the model
+identifier returned by the API.
 
 ## Citation
 
-If you use TruthLens, cite the paper:
+```bibtex
+@inproceedings{chakraborty2025truthlens,
+  title     = {{TruthLens}: Training-Free Data Verification for Deepfake Images via {VQA}-style Probing},
+  author    = {Chakraborty, Ritabrata and Chakraborty, Rajatsubhra and Khaleghi Rahimian, Ali},
+  booktitle = {Data in Generative Models Workshop: The Bad, the Ugly, and the Greats (DIG-BUGS) at ICML 2025},
+  year      = {2025},
+  url       = {https://icml.cc/virtual/2025/51033}
+}
+```
 
-- **ICML 2025 page:** [paper](https://icml.cc/virtual/2025/51033)
+## License and acknowledgements
+
+*TODO: add a LICENSE file for the TruthLens code.* No licence was included in the
+original release. Vendored code keeps its own licence: CNNDetection is CC BY-NC-SA 4.0,
+and guided-diffusion is MIT. The DIRE repository ships no licence file; see
+[`baselines/README.md`](baselines/README.md).
+
+TruthLens builds on [Chat-UniVi](https://github.com/PKU-YuanGroup/Chat-UniVi),
+[CNNDetection](https://github.com/PeterWang512/CNNDetection),
+[DIRE](https://github.com/ZhendongWang6/DIRE) and
+[guided-diffusion](https://github.com/openai/guided-diffusion).

@@ -1,4 +1,7 @@
-torch==2.5.1
-tqdm==4.67.1
-Pillow==10.0.1
-openai==0.28.0
+# Core TruthLens pipeline (aggregation, LLM judge, evaluation). Probing additionally
+# needs an LVLM environment - see docs/REPRODUCIBILITY.md.
+numpy>=1.21
+Pillow>=9.0
+PyYAML>=6.0
+tqdm>=4.60
+openai>=1.0,<3

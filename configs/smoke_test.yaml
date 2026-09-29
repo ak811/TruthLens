@@ -1,0 +1,16 @@
+# CPU-only end-to-end smoke test with mock LVLM and mock judge (no GPU, no API key).
+# Validates plumbing only; the numbers it produces carry no scientific meaning.
+run_name: smoke_test
+output_dir: outputs/smoke_test
+seed: 0
+data:
+  manifest: data/smoke/manifest.jsonl
+probe:
+  backend: mock
+  device: cpu
+  categories: all
+aggregate:
+  mode: structured
+  categories: all
+judge:
+  backend: mock

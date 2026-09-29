@@ -1,0 +1,24 @@
+# Reproduces the pipeline exactly as released before this refactor:
+#  - 7 probe categories (lighting and background were not aggregated),
+#  - answers concatenated with " | " (concatinate_jsons.py),
+#  - gpt-3.5-turbo judge with the released system prompt and API-default temperature.
+# Use it to check whether the released code, rather than the paper's description,
+# produced the reported numbers (docs/AUDIT.md, items A2-A4).
+run_name: released_pipeline
+output_dir: outputs/released_pipeline
+seed: 0
+data:
+  manifest: data/manifest.jsonl
+probe:
+  backend: chatunivi
+  model_path: Chat-UniVi/Chat-UniVi
+  categories: released_7
+  options:
+    conv_mode: simple
+aggregate:
+  mode: pipe
+  categories: released_7
+judge:
+  backend: openai
+  model: gpt-3.5-turbo
+  prompt: truthlens_v1
